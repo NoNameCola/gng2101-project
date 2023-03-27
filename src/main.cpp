@@ -2,6 +2,7 @@
 #include <Keyboard.h>
 #include <Mouse.h>
 #include <Joystick.h>
+#include <Adafruit_NeoPixel.h>
 
 // set pins for mouse buttons
 const int leftClick = 2;
