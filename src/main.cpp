@@ -17,6 +17,9 @@ const int middleClickToggle = 7;
 int const AXIS_X_PIN = A0;
 int const AXIS_Y_PIN = A1;
 
+int lastXAxisValue = -1;
+int lastYAxisValue = -1;
+
 /*
 Joystick_ Joystick(bool includeZAxis = false, bool includeRxAxis = false,
                    bool includeRyAxis = false, bool includeRzAxis = false,
@@ -61,6 +64,7 @@ void setup() {
     Mouse.begin();
     Keyboard.begin();
     //Joystick().begin();
+    XYAxiis();
 
     Serial.begin(9600);
 }
@@ -78,10 +82,21 @@ void loop() {
     }
 
     // joystick
-    if (millis() >= gNextTime) {
-        if (gCurrentStep < (37 + 256 + 1024 + 128)) {
-            gNextTime = millis() + gcAnalogDelta;
-            XYAxiis(gCurrentStep - (37 + 256));
-        }
+    bool sendUpdate = false;
+    // x-axis
+    const int nowXAxisValue = analogRead(AXIS_X_PIN);
+    if (nowXAxisValue != lastXAxisValue) {
+        lastXAxisValue = nowXAxisValue;
+        sendUpdate = true;
     }
+    // y-axis
+    const int nowYAxisValue = analogRead(AXIS_Y_PIN);
+    if (nowYAxisValue != lastYAxisValue) {
+        lastYAxisValue = nowYAxisValue;
+        sendUpdate = true;
+    }
+    if (sendUpdate) {
+        controller.sendState();
+    }
+    delay(1);
 }
