@@ -2,7 +2,7 @@
 #include <Keyboard.h>
 #include <Mouse.h>
 #include <Joystick.h>
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
 
 // set pins for mouse buttons
 const int leftClick = 2;
@@ -18,21 +18,11 @@ const int middleClickToggle = 7;
 int const AXIS_X_PIN = A0;
 int const AXIS_Y_PIN = A1;
 
+const int encoderA = 8;
+const int encoderB = 9;
+
 int lastXAxisValue = -1;
 int lastYAxisValue = -1;
-
-/*
-Joystick_ Joystick(bool includeZAxis = false, bool includeRxAxis = false,
-                   bool includeRyAxis = false, bool includeRzAxis = false,
-                   bool includeRudder = false, bool includeThrottle = false,
-                   bool includeAccelerator = false, bool includeBrake = false,
-                   bool includeSteering = false);
-const unsigned long gcCycleDelta = 1000;
-const unsigned long gcAnalogDelta = 25;
-const unsigned long gcButtonDelta = 500;
-unsigned long gNextTime = 0;
-unsigned int gCurrentStep = 0;
-*/
 
 Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
                      0, true, true, false,
@@ -40,11 +30,18 @@ Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
                      false, false, false,
                      false, false);
 
-void XYAxiis() {
-    controller.setXAxisRange(0, 1023);
-    controller.setYAxisRange(1023, 0);
-    controller.begin(false);
-};
+void scroll() {
+    if (digitalRead(encoderA) > digitalRead(encoderB)) {
+        Mouse.move(0, 0, 1);
+        delay(50);
+        return;
+    }
+    if (digitalRead(encoderB) > digitalRead(encoderA)) {
+        Mouse.move(0, 0, -1);
+        delay(50);
+        return;
+    }
+}
 
 void setup() {
     // mouse buttons
@@ -55,17 +52,16 @@ void setup() {
     pinMode(rightClickToggle, INPUT_PULLUP);
     pinMode(leftClickToggle, INPUT_PULLUP);
     pinMode(middleClickToggle, INPUT_PULLUP);
-    // joystick input pins
-    // pinMode(joyXAxis,INPUT);
-    // pinMode(joyYAxis, INPUT);
-    /*
-    Joystick().setXAxisRange(-127, 127);
-    Joystick().setYAxisRange(-127, 127);
-    */
+    //encoder
+    pinMode(encoderA, INPUT);
+    pinMode(encoderB, INPUT);
+
     Mouse.begin();
     Keyboard.begin();
-    //Joystick().begin();
-    XYAxiis();
+
+    controller.setXAxisRange(0, 1023);
+    controller.setYAxisRange(1023, 0);
+    controller.begin(false);
 
     Serial.begin(9600);
 }
@@ -81,6 +77,8 @@ void loop() {
     if (digitalRead(leftClick) == LOW) {
         Mouse.click(MOUSE_LEFT);
     }
+    //encoder stuff
+    scroll();
 
     // joystick
     bool sendUpdate = false;
