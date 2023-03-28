@@ -5,31 +5,33 @@
 //#include <Adafruit_NeoPixel.h>
 
 // set pins for mouse buttons
-const int leftClick = 2;
-const int rightClick = 3;
-const int middleClick = 4;
+const int leftClick = 0;
+const int rightClick = 1;
+const int middleClick = 2;
+const int stop = 3;
 
 // set pins for mouse toggle
-const int leftClickToggle = 5;
-const int rightClickToggle = 6;
-const int middleClickToggle = 7;
+const int leftClickToggle = 8;
+const int rightClickToggle = 9;
+const int middleClickToggle = 10;
 
 // set pins for joystick
 int const AXIS_X_PIN = A0;
 int const AXIS_Y_PIN = A1;
 
-const int encoderA = 8;
-const int encoderB = 9;
+// const int encoderA = 8;
+// const int encoderB = 9;
 
 int lastXAxisValue = -1;
 int lastYAxisValue = -1;
+int debounce = 100;
 
 Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
                      0, true, true, false,
                      false, false, false,
                      false, false, false,
                      false, false);
-
+/*
 void scroll() {
     if (digitalRead(encoderA) > digitalRead(encoderB)) {
         Mouse.move(0, 0, 1);
@@ -42,19 +44,69 @@ void scroll() {
         return;
     }
 }
+*/
+void mouse() {
+    if (digitalRead(rightClick) == LOW) {
+        Mouse.click(MOUSE_RIGHT);
+        Serial.print("right click");
+        Serial.print("\n");
+        delay(debounce);
+    }
+    if (digitalRead(middleClick) == LOW) {
+        Mouse.click(MOUSE_MIDDLE);
+        Serial.print("middle click");
+        Serial.print("\n");
+        delay(debounce);
+    }
+    if (digitalRead(leftClick) == LOW) {
+        Mouse.click(MOUSE_LEFT);
+        Serial.print("left click");
+        Serial.print("\n");
+        delay(debounce);
+    }
+
+    if (digitalRead(rightClickToggle) == LOW) {
+        Mouse.press(MOUSE_RIGHT);
+        Serial.print("right click toggle");
+        Serial.print("\n");
+    }
+    else {
+        Mouse.release(MOUSE_RIGHT);
+    }
+
+    if (digitalRead(middleClickToggle) == LOW) {
+        Mouse.press(MOUSE_MIDDLE);
+        Serial.print("middle click toggle");
+        Serial.print("\n");
+    }
+    else {
+        Mouse.release(MOUSE_MIDDLE);
+    }
+
+    if (digitalRead(leftClickToggle) == LOW) {
+        Mouse.press(MOUSE_LEFT);
+        Serial.print("left click toggle");
+        Serial.print("\n");
+    }
+    else {
+        Mouse.release(MOUSE_LEFT);
+    }
+
+}
 
 void setup() {
     // mouse buttons
     pinMode(rightClick, INPUT_PULLUP);
     pinMode(leftClick, INPUT_PULLUP);
     pinMode(middleClick, INPUT_PULLUP);
+    pinMode(stop, INPUT_PULLUP);
     // mouse toggles
     pinMode(rightClickToggle, INPUT_PULLUP);
     pinMode(leftClickToggle, INPUT_PULLUP);
     pinMode(middleClickToggle, INPUT_PULLUP);
-    //encoder
-    pinMode(encoderA, INPUT);
-    pinMode(encoderB, INPUT);
+    // encoder
+    // pinMode(encoderA, INPUT);
+    // pinMode(encoderB, INPUT);
 
     Mouse.begin();
     Keyboard.begin();
@@ -68,17 +120,9 @@ void setup() {
 
 void loop() {
     // click
-    if (digitalRead(rightClick) == LOW) {
-        Mouse.click(MOUSE_RIGHT);
-    }
-    if (digitalRead(middleClick) == LOW) {
-        Mouse.click(MOUSE_MIDDLE);
-    }
-    if (digitalRead(leftClick) == LOW) {
-        Mouse.click(MOUSE_LEFT);
-    }
+    mouse();
     //encoder stuff
-    scroll();
+    //scroll();
 
     // joystick
     bool sendUpdate = false;
@@ -86,16 +130,26 @@ void loop() {
     const int nowXAxisValue = analogRead(AXIS_X_PIN);
     if (nowXAxisValue != lastXAxisValue) {
         lastXAxisValue = nowXAxisValue;
+        Serial.print("X-value");
+        Serial.print(nowXAxisValue);
+        Serial.print('\n');
         sendUpdate = true;
     }
     // y-axis
     const int nowYAxisValue = analogRead(AXIS_Y_PIN);
     if (nowYAxisValue != lastYAxisValue) {
         lastYAxisValue = nowYAxisValue;
+        Serial.print("Y-value");
+        Serial.print(nowYAxisValue);
+        Serial.print('\n');
         sendUpdate = true;
     }
     if (sendUpdate) {
         controller.sendState();
     }
-    delay(1);
+
+    if (digitalRead(stop) == LOW)   {
+        Mouse.end();
+    }
+    delay(50);
 }
