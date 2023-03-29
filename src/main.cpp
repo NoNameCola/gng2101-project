@@ -16,27 +16,17 @@ const int rightClickToggle = 9;
 const int middleClickToggle = 10;
 
 // set pins for joystick
-int const AXIS_X_PIN = A0;
-int const AXIS_Y_PIN = A1;
+const int xAxis = A0;
+const int yAxis = A1;
 
-int lastXAxisValue = -1;
-int lastYAxisValue = -1;
+int range = 12;             // output range of X or Y movement
+int responseDelay = 5;
+int threshold = range / 4;
+int center = range / 2;
 
-const bool testAutoSendMode = false;
-
-const unsigned long gcCycleDelta = 1000;
-const unsigned long gcAnalogDelta = 25;
-const unsigned long gcButtonDelta = 500;
-unsigned long gNextTime = 0;
-unsigned int gCurrentStep = 0;
+bool mouseIsActive = true;
 
 int debounce = 100;
-
-Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
-                     0, true, true, false,
-                     false, false, false,
-                     false, false, false,
-                     false, false);
 
 void mouse() {
     if (digitalRead(rightClick) == LOW) {
@@ -83,29 +73,34 @@ void mouse() {
     }
 }
 
+int readAxis(int thisAxis) {
+    // read the analog input:
+    int reading = analogRead(thisAxis);
+
+    // map the reading from the analog input range to the output range:
+    reading = map(reading, 0, 1023, 0, range);
+
+    // if the output reading is outside from the rest position threshold, use it:
+    int distance = reading - center;
+
+    if (abs(distance) < threshold) {
+        distance = 0;
+    }
+
+    // return the distance for this axis:
+    return distance;
+}
+
+
 void stick() {
-    bool sendUpdate = false;
-    const int currentXAxisValue = analogRead(AXIS_X_PIN);
-    if (currentXAxisValue != lastXAxisValue)
-    {
-        controller.setXAxis(currentXAxisValue);
-        lastXAxisValue = currentXAxisValue;
-        sendUpdate = true;
+    int xReading = readAxis(xAxis);
+    int yReading = readAxis(xAxis);
+
+    if (mouseIsActive) {
+        Mouse.move(xReading, yReading, 0);
     }
 
-    const int currentYAxisValue = analogRead(AXIS_Y_PIN);
-    if (currentYAxisValue != lastYAxisValue)
-    {
-        controller.setYAxis(currentYAxisValue);
-        lastYAxisValue = currentYAxisValue;
-        sendUpdate = true;
-    }
-
-    if (sendUpdate)
-    {
-        controller.sendState();
-    }
-    delay(50);
+    delay(responseDelay);
 }
 
 void setup() {
@@ -121,10 +116,6 @@ void setup() {
 
     Mouse.begin();
     Keyboard.begin();
-
-    controller.setYAxisRange(0, 1023);
-    controller.setYAxisRange(1023, 0);
-    controller.begin(false);
 
     Serial.begin(9600);
 }
