@@ -19,11 +19,17 @@ const int middleClickToggle = 10;
 int const AXIS_X_PIN = A0;
 int const AXIS_Y_PIN = A1;
 
-// const int encoderA = 8;
-// const int encoderB = 9;
-
 int lastXAxisValue = -1;
 int lastYAxisValue = -1;
+
+const bool testAutoSendMode = false;
+
+const unsigned long gcCycleDelta = 1000;
+const unsigned long gcAnalogDelta = 25;
+const unsigned long gcButtonDelta = 500;
+unsigned long gNextTime = 0;
+unsigned int gCurrentStep = 0;
+
 int debounce = 100;
 
 Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
@@ -31,20 +37,7 @@ Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD, 0,
                      false, false, false,
                      false, false, false,
                      false, false);
-/*
-void scroll() {
-    if (digitalRead(encoderA) > digitalRead(encoderB)) {
-        Mouse.move(0, 0, 1);
-        delay(50);
-        return;
-    }
-    if (digitalRead(encoderB) > digitalRead(encoderA)) {
-        Mouse.move(0, 0, -1);
-        delay(50);
-        return;
-    }
-}
-*/
+
 void mouse() {
     if (digitalRead(rightClick) == LOW) {
         Mouse.click(MOUSE_RIGHT);
@@ -69,8 +62,7 @@ void mouse() {
         Mouse.press(MOUSE_RIGHT);
         Serial.print("right click toggle");
         Serial.print("\n");
-    }
-    else {
+    } else {
         Mouse.release(MOUSE_RIGHT);
     }
 
@@ -78,8 +70,7 @@ void mouse() {
         Mouse.press(MOUSE_MIDDLE);
         Serial.print("middle click toggle");
         Serial.print("\n");
-    }
-    else {
+    } else {
         Mouse.release(MOUSE_MIDDLE);
     }
 
@@ -87,11 +78,34 @@ void mouse() {
         Mouse.press(MOUSE_LEFT);
         Serial.print("left click toggle");
         Serial.print("\n");
-    }
-    else {
+    } else {
         Mouse.release(MOUSE_LEFT);
     }
+}
 
+void stick() {
+    bool sendUpdate = false;
+    const int currentXAxisValue = analogRead(AXIS_X_PIN);
+    if (currentXAxisValue != lastXAxisValue)
+    {
+        controller.setXAxis(currentXAxisValue);
+        lastXAxisValue = currentXAxisValue;
+        sendUpdate = true;
+    }
+
+    const int currentYAxisValue = analogRead(AXIS_Y_PIN);
+    if (currentYAxisValue != lastYAxisValue)
+    {
+        controller.setYAxis(currentYAxisValue);
+        lastYAxisValue = currentYAxisValue;
+        sendUpdate = true;
+    }
+
+    if (sendUpdate)
+    {
+        controller.sendState();
+    }
+    delay(50);
 }
 
 void setup() {
@@ -104,14 +118,11 @@ void setup() {
     pinMode(rightClickToggle, INPUT_PULLUP);
     pinMode(leftClickToggle, INPUT_PULLUP);
     pinMode(middleClickToggle, INPUT_PULLUP);
-    // encoder
-    // pinMode(encoderA, INPUT);
-    // pinMode(encoderB, INPUT);
 
     Mouse.begin();
     Keyboard.begin();
 
-    controller.setXAxisRange(0, 1023);
+    controller.setYAxisRange(0, 1023);
     controller.setYAxisRange(1023, 0);
     controller.begin(false);
 
@@ -125,30 +136,9 @@ void loop() {
     //scroll();
 
     // joystick
-    bool sendUpdate = false;
-    // x-axis
-    const int nowXAxisValue = analogRead(AXIS_X_PIN);
-    if (nowXAxisValue != lastXAxisValue) {
-        lastXAxisValue = nowXAxisValue;
-        Serial.print("X-value");
-        Serial.print(nowXAxisValue);
-        Serial.print('\n');
-        sendUpdate = true;
-    }
-    // y-axis
-    const int nowYAxisValue = analogRead(AXIS_Y_PIN);
-    if (nowYAxisValue != lastYAxisValue) {
-        lastYAxisValue = nowYAxisValue;
-        Serial.print("Y-value");
-        Serial.print(nowYAxisValue);
-        Serial.print('\n');
-        sendUpdate = true;
-    }
-    if (sendUpdate) {
-        controller.sendState();
-    }
+    stick();
 
-    if (digitalRead(stop) == LOW)   {
+    if (digitalRead(stop) == LOW) {
         Mouse.end();
     }
     delay(50);
