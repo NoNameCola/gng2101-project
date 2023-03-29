@@ -76,6 +76,8 @@ void mouse() {
 int readAxis(int thisAxis) {
     // read the analog input:
     int reading = analogRead(thisAxis);
+    Serial.print(reading);
+    Serial.print("\n");
 
     // map the reading from the analog input range to the output range:
     reading = map(reading, 0, 1023, 0, range);
@@ -94,7 +96,7 @@ int readAxis(int thisAxis) {
 
 void stick() {
     int xReading = readAxis(xAxis);
-    int yReading = readAxis(xAxis);
+    int yReading = readAxis(yAxis);
 
     if (mouseIsActive) {
         Mouse.move(xReading, yReading, 0);
